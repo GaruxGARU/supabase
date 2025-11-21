@@ -126,13 +126,26 @@ export const deleteBucket = async (page: Page, ref: string, bucketName: string) 
  * @param bucketName - Name of the bucket to navigate to
  */
 export const navigateToBucket = async (page: Page, ref: string, bucketName: string) => {
-  // Click on the bucket row to navigate
+  // Identify the bucket row to click
   const bucketRow = page.getByRole('row').filter({ hasText: bucketName })
   await expect(bucketRow, `Bucket row for ${bucketName} should be visible`).toBeVisible()
-  await bucketRow.click()
 
-  // Wait for navigation to complete
-  await page.waitForURL(new RegExp(`/storage/files/buckets/${encodeURIComponent(bucketName)}`))
+  // Click the bucket and wait for page to load
+  const navigationPromise = page.waitForURL(
+    new RegExp(`/storage/files/buckets/${encodeURIComponent(bucketName)}`)
+  )
+  const apiPromise = waitForApiResponse(
+    page,
+    'storage',
+    ref,
+    `buckets/${bucketName}/objects/list`,
+    {
+      method: 'POST',
+    }
+  )
+  await bucketRow.click()
+  await navigationPromise
+  await apiPromise
 
   // Verify we're in the bucket by checking the breadcrumb or "Edit bucket" button
   await expect(
@@ -183,7 +196,7 @@ export const uploadFile = async (page: Page, filePath: string, fileName: string)
   await expect(
     page.getByTitle(fileName),
     `File ${fileName} should be visible in explorer after upload`
-  ).toBeVisible({ timeout: 30_000 })
+  ).toBeVisible()
 }
 
 /**

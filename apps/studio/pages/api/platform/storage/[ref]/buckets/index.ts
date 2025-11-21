@@ -22,45 +22,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 const handleGet = async (req: NextApiRequest, res: NextApiResponse) => {
-  const {
-    limit: queryLimit,
-    offset: queryOffset,
-    search: querySearch,
-    sortColumn: querySortColumn,
-    sortOrder: querySortOrder,
-  } = req.query
-
-  const limit = queryLimit
-    ? Array.isArray(queryLimit)
-      ? parseInt(queryLimit[0], 10)
-      : parseInt(queryLimit, 10)
-    : undefined
-  const offset = queryOffset
-    ? Array.isArray(queryOffset)
-      ? parseInt(queryOffset[0], 10)
-      : parseInt(queryOffset, 10)
-    : undefined
-  const search = querySearch
-    ? Array.isArray(querySearch)
-      ? querySearch[0]
-      : querySearch
-    : undefined
-  const sortColumnString = querySortColumn
-    ? Array.isArray(querySortColumn)
-      ? querySortColumn[0]
-      : querySortColumn
-    : undefined
-  const sortColumn = ['id', 'created_at', 'name'].includes(sortColumnString || '')
-    ? (sortColumnString as 'id' | 'created_at' | 'name')
-    : undefined
-  const sortOrderString = querySortOrder
-    ? Array.isArray(querySortOrder)
-      ? querySortOrder[0]
-      : querySortOrder
-    : undefined
-  const sortOrder = ['asc', 'desc'].includes(sortOrderString || '')
-    ? (sortOrderString as 'asc' | 'desc')
-    : undefined
+  const { limit, offset, search, sortColumn, sortOrder } = parseStoragePaginationParams(req)
 
   const { data, error } = await supabase.storage.listBuckets({
     ...(limit ? { limit } : {}),
@@ -94,4 +56,36 @@ const handlePost = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   return res.status(200).json(data)
+}
+
+const parseStoragePaginationParams = (req: NextApiRequest) => {
+  const {
+    limit: queryLimit,
+    offset: queryOffset,
+    search: querySearch,
+    sortColumn: querySortColumn,
+    sortOrder: querySortOrder,
+  } = req.query
+
+  const limit = parseAsInt(queryLimit)
+  const offset = parseAsInt(queryOffset)
+  const search = parseAsString(querySearch)
+  const sortColumn = parseAsStringEnum(querySortColumn, ['id', 'created_at', 'name'])
+  const sortOrder = parseAsStringEnum(querySortOrder, ['asc', 'desc'])
+
+  return { limit, offset, search, sortColumn, sortOrder }
+}
+
+const parseAsInt = (value: string | string[] | undefined): number | undefined =>
+  value ? (Array.isArray(value) ? parseInt(value[0], 10) : parseInt(value, 10)) : undefined
+
+const parseAsString = (value: string | string[] | undefined): string | undefined =>
+  value ? (Array.isArray(value) ? value[0] : value) : undefined
+
+const parseAsStringEnum = <T extends string>(
+  value: string | string[] | undefined,
+  validValues: T[]
+): T | undefined => {
+  const strValue = value ? (Array.isArray(value) ? value[0] : value) : undefined
+  return strValue && validValues.includes(strValue as T) ? (strValue as T) : undefined
 }

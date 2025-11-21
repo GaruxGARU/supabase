@@ -1,22 +1,11 @@
-import { useIntersectionObserver } from '@uidotdev/usehooks'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useRef } from 'react'
 
-import {
-  VirtualizedTable,
-  VirtualizedTableBody,
-  VirtualizedTableCell,
-  VirtualizedTableRow,
-} from 'components/ui/VirtualizedTable'
+import { VirtualizedTable, VirtualizedTableBody } from 'components/ui/VirtualizedTable'
 import { Bucket } from 'data/storage/buckets-query'
-import { Table, TableBody, TableCell, TableRow } from 'ui'
-import { ShimmeringLoader } from 'ui-patterns'
+import { Table, TableBody } from 'ui'
 import { BucketTableEmptyState, BucketTableHeader, BucketTableRow } from './BucketTable'
-
-type PaginationProps = {
-  hasMore?: boolean
-  isLoadingMore?: boolean
-  onLoadMore?: () => void
-}
+import { LoadMoreRow } from './BucketsTable.LoadMoreRow'
+import type { BucketsTablePaginationProps } from './BucketsTable.types'
 
 type BucketsTableProps = {
   buckets: Bucket[]
@@ -24,7 +13,7 @@ type BucketsTableProps = {
   filterString: string
   formattedGlobalUploadLimit: string
   getPolicyCount: (bucketName: string) => number
-  pagination: PaginationProps
+  pagination: BucketsTablePaginationProps
 }
 
 export const BucketsTable = (props: BucketsTableProps) => {
@@ -133,48 +122,5 @@ const BucketsTableVirtualized = ({
         )}
       </VirtualizedTableBody>
     </VirtualizedTable>
-  )
-}
-
-type LoadMoreRowProps = {
-  mode: 'standard' | 'virtualized'
-  colSpan: number
-  scrollableParent: HTMLElement | null
-} & PaginationProps
-
-const LoadMoreRow = ({
-  mode,
-  colSpan,
-  scrollableParent,
-
-  hasMore = false,
-  isLoadingMore = false,
-  onLoadMore,
-}: LoadMoreRowProps): ReactNode => {
-  const [sentinelRef, entry] = useIntersectionObserver({
-    threshold: 0,
-    root: scrollableParent,
-    rootMargin: '200px 0px 200px 0px',
-  })
-
-  useEffect(() => {
-    if (entry?.isIntersecting && hasMore && !isLoadingMore) {
-      onLoadMore?.()
-    }
-  }, [entry?.isIntersecting, hasMore, isLoadingMore, onLoadMore])
-
-  if (!hasMore && !isLoadingMore) return null
-
-  const RowComponent = mode === 'standard' ? TableRow : VirtualizedTableRow
-  const CellComponent = mode === 'standard' ? TableCell : VirtualizedTableCell
-
-  return (
-    <RowComponent ref={sentinelRef}>
-      {Array.from({ length: colSpan }, (_, idx) => (
-        <CellComponent key={idx}>
-          <ShimmeringLoader className="w-3/4" />
-        </CellComponent>
-      ))}
-    </RowComponent>
   )
 }
