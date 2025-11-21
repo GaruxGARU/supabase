@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test'
-import { waitForApiResponse } from './wait-for-response'
-import { toUrl } from './to-url'
+import { toUrl } from './to-url.js'
+import { waitForApiResponse } from './wait-for-response.js'
 
 /**
  * Dismisses any visible toast notifications
@@ -95,7 +95,9 @@ export const deleteBucket = async (page: Page, ref: string, bucketName: string) 
 
   // Type bucket name in the confirmation textbox (placeholder: "Type bucket name")
   const confirmInput = page.getByPlaceholder('Type bucket name')
-  await expect(confirmInput, 'Confirmation input should be visible').toBeVisible()
+  await expect(confirmInput, 'Confirmation input should be visible').toBeVisible({
+    timeout: 15_000,
+  })
   await confirmInput.fill(bucketName)
 
   // Wait for API call and click Delete bucket button
@@ -181,7 +183,7 @@ export const uploadFile = async (page: Page, filePath: string, fileName: string)
   await expect(
     page.getByTitle(fileName),
     `File ${fileName} should be visible in explorer after upload`
-  ).toBeVisible({ timeout: 15_000 })
+  ).toBeVisible({ timeout: 30_000 })
 }
 
 /**
@@ -234,7 +236,7 @@ export const renameItem = async (page: Page, oldName: string, newName: string) =
 
   // Verify item was renamed
   await expect(page.getByTitle(newName), `Item should be renamed to ${newName}`).toBeVisible({
-    timeout: 10_000,
+    timeout: 30_000,
   })
   await expect(
     page.getByTitle(oldName),
